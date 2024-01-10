@@ -88,6 +88,8 @@ class _MyHomePageState extends State<MyHomePage> {
   // TextFields' controllers for adding  or updating data
   final TextEditingController titleController = TextEditingController();
   final TextEditingController descriptionController = TextEditingController();
+  final TextEditingController dateController = TextEditingController();
+  final TextEditingController timeController = TextEditingController();
 
   // To Update the data from Hive in local variable
   getHiveData() {
@@ -143,8 +145,8 @@ class _MyHomePageState extends State<MyHomePage> {
               icon: const Icon(Icons.refresh))
         ],
       ),
-        body: Padding(
-          padding: const EdgeInsets.all(8.0),
+        body: SingleChildScrollView(
+          padding: const EdgeInsets.all(10.0),
           child: myHiveData.isEmpty // To show when no data is stored
               ? const Center(
               child: Text(
@@ -153,31 +155,57 @@ class _MyHomePageState extends State<MyHomePage> {
               ))
           // To show when data is stored
               : Column(
+
               children: List.generate(myHiveData.length, (index) {
                 final userData = myHiveData[index];
+
                 return Card(
-                  child: ListTile(
-                    title: //Show Name of user stored in data base
-                    Text("Title : ${userData["title"]}"),
-                    subtitle: //Show Email of user stored in data base
-                    Text("Description : ${userData["description"]}"),
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
+                  child: Padding(
+                    padding: const EdgeInsets.all(10.0),
+                    child: Column(
+
+                      crossAxisAlignment: CrossAxisAlignment.start,
+
                       children: [
-                        // To edit the data stored
-                        IconButton(
-                            onPressed: () {
-                              showForm(userData["key"]);
-                            },
-                            icon: const Icon(Icons.edit)),
-                        // To delete the data stored
-                        IconButton(
-                            onPressed: () {
-                              HiveFunctions.deleteUser(userData["key"]);
-                              // To refreah the Data stored in Hive after deletion
-                              getHiveData();
-                            },
-                            icon: const Icon(Icons.delete)),
+                        ListTile(
+                          title: //Show Name of user stored in data base
+                          Text("Title : ${userData["title"]}"),
+                          subtitle: //Show Email of user stored in data base
+                          Text("Description : ${userData["description"]}"),
+
+
+                          trailing: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+
+                              // To edit the data stored
+                              IconButton(
+                                  onPressed: () {
+                                    showForm(userData["key"]);
+                                  },
+                                  icon: const Icon(Icons.edit)),
+                              // To delete the data stored
+                              IconButton(
+                                  onPressed: () {
+                                    HiveFunctions.deleteUser(userData["key"]);
+                                    // To refreah the Data stored in Hive after deletion
+                                    getHiveData();
+                                  },
+                                  icon: const Icon(Icons.delete)),
+                            ],
+                          ),
+                        ),
+
+                        Row(
+                          children: [
+                            Container(
+                              margin: EdgeInsets.only(left: 10),
+                                child: Text("Date : ${userData["date"]}")),
+                          ],
+                        ),
+                        Container(
+                            margin: EdgeInsets.only(left: 10),
+                            child: Text("Time : ${userData["time"]}")),
                       ],
                     ),
                   ),
@@ -286,6 +314,8 @@ class _MyHomePageState extends State<MyHomePage> {
       myHiveData.firstWhere((element) => element['key'] == itemKey);
       titleController.text = existingItem['title'];
       descriptionController.text = existingItem['description'];
+      dateController.text=existingItem['date'];
+      timeController.text=existingItem['time'];
     }
 
     showModalBottomSheet(
@@ -320,36 +350,64 @@ class _MyHomePageState extends State<MyHomePage> {
                 keyboardType: TextInputType.text,
                 decoration: const InputDecoration(hintText: 'Description'),
               ),
+              TextField(
+                controller:dateController ,
+                decoration: InputDecoration(
+                  hintText: 'Date'
+                ),
+
+              ),
+              TextField(
+                controller: timeController,
+                keyboardType: TextInputType.text,
+                decoration: InputDecoration(
+                  hintText: 'Time'
+
+                ),
+              ),
               const SizedBox(
                 height: 20,
               ),
               ElevatedButton(
+
+
                 onPressed: () async {
+
                   // Save new item
                   if (itemKey == null) {
                     HiveFunctions.createUser({
                       "description": descriptionController.text,
-                      "title": titleController.text
+                      "title": titleController.text,
+                      "date":dateController.text,
+                      "time":timeController.text
+
+
                     });
+
                   }
 
                   // update an existing item
                   if (itemKey != null) {
                     HiveFunctions.updateUser(itemKey, {
-                      "email": descriptionController.text,
-                      "title": titleController.text
+                      "description": descriptionController.text,
+                      "title": titleController.text,
+                      "date":dateController.text,
+                      "time":timeController.text
                     });
                   }
 
                   // Clear the text fields
                   titleController.text = '';
                   descriptionController.text = '';
+                  dateController.text='';
+                  timeController.text='';
+
 
                   Navigator.of(context).pop(); // Close the bottom sheet
                   // To refresh the Data stored in Hive after updation
                   getHiveData();
                 },
-                child: Text(itemKey == null ? 'Create New' : 'Update'),
+                child: Text(itemKey == null ? 'Create New' : 'Update',style: TextStyle(color: Colors.lightBlue),),
               ),
               const SizedBox(
                 height: 15,

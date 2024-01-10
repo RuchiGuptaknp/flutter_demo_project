@@ -15,7 +15,8 @@ class HiveFunctions{
   static List getAllUsers() {
     final data = userBox.keys.map((key) {
       final value = userBox.get(key);
-      return {"key": key, "title": value["title"], "description": value['description']};
+      return {"key": key, "title": value["title"], "description": value['description'],
+        "date":value["date"],"time":value["time"]};
     }).toList();
 
     return data.reversed.toList();
