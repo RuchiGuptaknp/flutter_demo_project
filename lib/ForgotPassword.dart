@@ -72,7 +72,9 @@ class _Forgot extends State<ForgotPassword>{
 
                 },
                 child: Center(
-                  child: Text ("Forgot Password",style: TextStyle(fontSize: 20,fontWeight:FontWeight.bold,color: Colors.black),),
+                  child: Text ("Forgot Password",
+                    style: TextStyle(fontSize: 20,fontWeight:FontWeight.bold,color: Colors.black),),
+
                 )
 
               ),

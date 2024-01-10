@@ -27,10 +27,10 @@ class _HomeState extends State<Home> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('REST API Example'),
-        backgroundColor: Colors.blue,
-      ),
+     /* appBar: AppBar(
+       // title: const Text('REST API Example'),
+        //backgroundColor: Colors.blue,
+      ),*/
       body: _userModel == null || _userModel!.isEmpty
           ? const Center(
         child: CircularProgressIndicator(),
@@ -47,11 +47,13 @@ class _HomeState extends State<Home> {
 
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
 
+
                   children: [
                     Text(_userModel![index].id.toString(),style: TextStyle(fontSize: 20,color: Colors.black)),
                    // Text(_userModel![index].userId.toString()),
                     Text(_userModel![index].title ?? ""),
                     //Text(_userModel![index].body ?? ""),
+
                   ],
                 ),
 

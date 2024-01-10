@@ -1,9 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_demo_project/HiveDBFun.dart';
+import 'package:flutter_demo_project/HomePage.dart';
 import 'package:flutter_demo_project/LogInScreen.dart';
 import 'package:flutter_demo_project/container.dart';
 import 'package:flutter_demo_project/listView.dart';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
-void main() {
+
+
+Future main() async {
+  // It is used so that void main function can
+  // be intiated after successfully intialization of data
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // To intialise the hive database
+  await Hive.initFlutter();
+
+  // To open the user hive box
+   await Hive.openBox(userHiveBox);
 
   runApp(const MyApp());
 }
@@ -45,7 +60,10 @@ class MyApp extends StatelessWidget {
 }
 
 class MyHomePage extends StatefulWidget {
+
+
   const MyHomePage({super.key, required this.title});
+
 
   // This widget is the home page of your application. It is stateful, meaning
   // that it has a State object (defined below) that contains fields that affect
@@ -65,7 +83,28 @@ class MyHomePage extends StatefulWidget {
 class _MyHomePageState extends State<MyHomePage> {
   int _counter = 0;
 
-  void _incrementCounter() {
+  List myHiveData = [];
+
+  // TextFields' controllers for adding  or updating data
+  final TextEditingController titleController = TextEditingController();
+  final TextEditingController descriptionController = TextEditingController();
+
+  // To Update the data from Hive in local variable
+  getHiveData() {
+    myHiveData = HiveFunctions.getAllUsers();
+    setState(() {});
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    // Update the initial data
+    // when page is loading
+    getHiveData();
+  }
+
+
+ /* void _incrementCounter() {
     setState(() {
       // This call to setState tells the Flutter framework that something has
       // changed in this State, which causes it to rerun the build method below
@@ -74,7 +113,7 @@ class _MyHomePageState extends State<MyHomePage> {
       // called again, and so nothing would appear to happen.
       _counter++;
     });
-  }
+  }*/
 
   @override
   Widget build(BuildContext context) {
@@ -94,43 +133,66 @@ class _MyHomePageState extends State<MyHomePage> {
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
         title: Text(widget.title),
-      ),
-      body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          //
-          // TRY THIS: Invoke "debug painting" (choose the "Toggle Debug Paint"
-          // action in the IDE, or press "p" in the console), to see the
-          // wireframe for each widget.
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            const Text(
-              'You have pushed the button this many times:',
-            ),
-            Text(
-              '$_counter',
-              style: Theme.of(context).textTheme.headlineMedium,
-            ),
-          ],
-        ),
-      ),
-      floatingActionButton: FloatingActionButton(
 
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
-        child: const Icon(Icons.add),
-        backgroundColor: Colors.lightBlue,
+        actions: [
+          // To refreah the Data stored in Hive
+          IconButton(
+              onPressed: () {
+                getHiveData();
+              },
+              icon: const Icon(Icons.refresh))
+        ],
       ),
+        body: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: myHiveData.isEmpty // To show when no data is stored
+              ? const Center(
+              child: Text(
+                "No Data is Stored",
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.w600),
+              ))
+          // To show when data is stored
+              : Column(
+              children: List.generate(myHiveData.length, (index) {
+                final userData = myHiveData[index];
+                return Card(
+                  child: ListTile(
+                    title: //Show Name of user stored in data base
+                    Text("Title : ${userData["title"]}"),
+                    subtitle: //Show Email of user stored in data base
+                    Text("Description : ${userData["description"]}"),
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // To edit the data stored
+                        IconButton(
+                            onPressed: () {
+                              showForm(userData["key"]);
+                            },
+                            icon: const Icon(Icons.edit)),
+                        // To delete the data stored
+                        IconButton(
+                            onPressed: () {
+                              HiveFunctions.deleteUser(userData["key"]);
+                              // To refreah the Data stored in Hive after deletion
+                              getHiveData();
+                            },
+                            icon: const Icon(Icons.delete)),
+                      ],
+                    ),
+                  ),
+                );
+              }).toList()),
+        ),
+
+    floatingActionButton: FloatingActionButton.extended(
+          label: const Text("Add Data"),
+          icon: const Icon(Icons.add),
+
+          backgroundColor: Colors.lightBlue,
+          onPressed: () {
+            showForm(null);
+          }),
 
       drawer: Drawer(
         child: ListView(
@@ -178,14 +240,14 @@ class _MyHomePageState extends State<MyHomePage> {
               leading: const Icon(Icons.workspace_premium),
               title: const Text(' Go Premium '),
               onTap: () {
-                Navigator.push(context, MaterialPageRoute(builder: (context)=>ContainerApp()));
+                Navigator.push(context, MaterialPageRoute(builder: (context)=>container()));
               },
             ),
             ListTile(
               leading: const Icon(Icons.video_label),
               title: const Text(' Saved Videos '),
               onTap: () {
-                Navigator.pop(context);
+                Navigator.push(context,MaterialPageRoute(builder: (context)=>HomePage()));
               },
             ),
             ListTile(
@@ -211,5 +273,90 @@ class _MyHomePageState extends State<MyHomePage> {
 
 
     );
+
   }
+// dialog box to create or update the data in hive
+  void showForm(int? itemKey) async {
+    // itemKey == null -> create new item
+    // itemKey != null -> update an existing item
+
+    if (itemKey != null) {
+      // To find the existing item in our  local database
+      final existingItem =
+      myHiveData.firstWhere((element) => element['key'] == itemKey);
+      titleController.text = existingItem['title'];
+      descriptionController.text = existingItem['description'];
+    }
+
+    showModalBottomSheet(
+        context: context,
+        elevation: 5,
+        isScrollControlled: true,
+        builder: (_) => Container(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom,
+              top: 15,
+              left: 15,
+              right: 15),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Center(
+                  child: Text(
+                    itemKey == null ? 'Create New' : 'Update',
+                    style: const TextStyle(
+                        fontSize: 22, fontWeight: FontWeight.w600),
+                  )),
+              TextField(
+                controller: titleController,
+                decoration: const InputDecoration(hintText: 'Title'),
+              ),
+              const SizedBox(
+                height: 10,
+              ),
+              TextField(
+                controller: descriptionController,
+                keyboardType: TextInputType.text,
+                decoration: const InputDecoration(hintText: 'Description'),
+              ),
+              const SizedBox(
+                height: 20,
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  // Save new item
+                  if (itemKey == null) {
+                    HiveFunctions.createUser({
+                      "description": descriptionController.text,
+                      "title": titleController.text
+                    });
+                  }
+
+                  // update an existing item
+                  if (itemKey != null) {
+                    HiveFunctions.updateUser(itemKey, {
+                      "email": descriptionController.text,
+                      "title": titleController.text
+                    });
+                  }
+
+                  // Clear the text fields
+                  titleController.text = '';
+                  descriptionController.text = '';
+
+                  Navigator.of(context).pop(); // Close the bottom sheet
+                  // To refresh the Data stored in Hive after updation
+                  getHiveData();
+                },
+                child: Text(itemKey == null ? 'Create New' : 'Update'),
+              ),
+              const SizedBox(
+                height: 15,
+              )
+            ],
+          ),
+        ));
+  }
+
 }
